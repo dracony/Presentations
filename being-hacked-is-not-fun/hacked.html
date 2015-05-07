@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Being hacked is not fun</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+        <style type="text/css">
+            @import url(http://fonts.googleapis.com/css?family=Source+Code+Pro|Open+Sans:400,700&subset=cyrillic,latin);
+            
+            body {
+                font-family: 'Helvetica Neue', 'Helvetica', 'Open Sans', Arial, sans-serif;
+            }
+            
+            .remark-code, .remark-inline-code {
+                font-family: 'Source Code Pro';
+                line-height: 1.3em;
+            }
+            
+            .remark-slide-content{
+                background: #2d3e50;
+                color:#fff;
+                font-size:2em;
+                line-height: 1.5em;
+            }
+            
+            a, a:visited {
+                color:#fff;
+            }
+            
+            h1{
+                position:relative;
+                margin: 0em -3em 0.2em -0.75em;
+                background: #1bbc9b;
+                padding:0.25em 0 0.25em 0.75em;
+                font-weight: bold;
+                
+            }
+            
+            .cover{
+                padding:0em;
+                text-align:center;
+            }
+            
+            .cover h1{
+                margin:0px;
+                padding:3em 0em 0.55em 0em;
+                text-align:center;
+                font-size:2.5em;
+            }
+            
+            .group h1{
+                background:none;
+                margin:2.75em 0em 0em 0em;
+                text-align:center;
+                padding:0em;
+                font-size: 3em;
+            }
+            
+            .float-right{
+                float:right;
+            }
+            .float-left{
+                float:left;
+            }
+        </style>
+    </head>
+    <body>
+        <textarea id="source">
+
+            class: cover
+
+            # Being hacked is not fun
+              
+            
+            
+            Some tips on recovering
+            
+            ---
+            # OWASP top 10
+            
+            * Injection
+            * Broken Auth
+            * XSS
+            * Direct object reference
+            * Security misconfiguration
+            * Sensitive data exposure
+            * Missing function level access control
+            * CSRF
+            * Vulnerable components
+            * Unvalidated redirects
+            
+            ---
+            class: group
+            
+            # Determine intent
+            
+            ---
+            # Defacement
+            
+            The least damaging one, although user passwords might be in public access now and invite other attackers
+            
+            .center[
+                ![Defaced](./img/defaced.png)
+            ]       
+            
+            ---
+            
+            # Botnetting
+            
+            Usually the case when the site appears to be operating as normal
+            
+            Checks:
+            
+            * Check for stange processes running
+            * Check for open ports that shouldn't be open
+            * Check you mailer service
+            
+            Probable result:
+            
+            * Data has larger probability of being untouched
+            * Your server might already be blacklisted by spam filters
+            
+            ---
+            
+            # Direct attack
+            
+            * Probably the code has been whiped
+            * The data has been corrupter
+            * Backdoors have been installed
+            
+            In this case you obviously MUST reinstall the entire system,
+            restore backups and try pursuing the attacker.
+            
+            ---
+            
+            # Spooky
+            
+            There is a mysterious login present, but the site
+            has not been defaced, no files have been modified
+            and there is nothing in the logs.
+            
+            .center[
+                ![Ghost](./img/ghost.png)
+            ]
+            
+            Check out talks by Matthew Garrett for some ideas what the attackers can do
+            
+            ---
+            
+            class: group
+            
+            # Locate attack vector
+                        
+            ---
+
+            # Apache Scalp
+            
+            Uses regular expressions from the PHP-IDS project
+            to search your access log for the initial access point
+            
+            In a perfect scenario set it up to run every couple of minutes
+            and email you whenever it detects an attack
+            
+            ---
+            
+            # Hindsight: log file uploads
+            
+            The most damaging attacks require a shell script being installed.
+            
+            Older CMSes had security holes that would allow upploading executable files.
+            
+            If you run many legacy websites connnsider using Runkit to redefine the <i>move_uploaded_file</i>
+            function to log file destination.
+            
+            This makes it easy to both find the shell itself and detect what part of the system was exploited.
+            ---
+            
+            # Check modified files
+            
+            The modified time of a file can actually be modified to make the file look harmless.
+            
+            ```
+            touch -mt 0911171533 some_file
+            ```
+            
+            In fact each file has 3 timestamps accessable using <i>stat</i>:
+            
+            * Access - Last access time ( can be altered )
+            * Modify - Last modified time ( can be altered )
+            * Change - This is the one you can trust
+            
+            Use <i>-ctime</i> instead of <i>-mtime</i> when using <i>find</i>
+            ---
+            
+            # Hindsight: use Aide 
+            
+            It stores checksums of files, directories and their attributes and can instantly
+            tell you where and when a modification is made.
+            
+            Having Aide may save you time on reinstalling the entire system and
+            by providing you with more information on hacked files let you assess the damage better
+
+            ---
+            
+            # Check for data changes
+            
+            MySQLDiff allows comparing two databases and generating
+            a diff script
+            
+            Or do it manually:
+            
+            ```
+            mysqldump --skip-comments --skip-extended-insert -u root -p dbName1>file1.sql
+            mysqldump --skip-comments --skip-extended-insert -u root -p dbName2>file2.sql
+            diff file1.sql file2.sql
+            ```
+            
+            ---
+            
+            class: group
+            
+            # Know your enemy
+            
+            ---
+            
+            # Metasploit
+            
+            Far too easy to use ...
+            
+            .center[
+                ![Defaced](./img/metasploit.png)
+            ]
+            ---
+            # A PHP shell
+            
+            ```
+            eval(base64_decode("aWYoZnVuY3Rpb...."));
+            ```
+            
+            .center[
+                ![Shell](./img/shell2.gif)
+            ]
+            
+            ---
+            # Better than CPanel
+            
+            .center[
+                ![Shell](./img/shell1.jpg)    
+            ]
+            ---
+            
+            # Tell the users what happened
+            
+            It's important that people know what data might be compromised. A lot of people
+            use the same password for multiple websites, and in the worst case
+            hacking one of them can give attackers access to their email address.
+            
+            Also immediately change users passwords to something that will never match
+            to force them creating new ones using password reset.
+            
+            ---
+            
+            # Check for leaks
+            
+            A lot of hakergroups release compromised data by uploading to filesharing websites,
+            or even to pastebin sites. Finding such releases and taking them down prevents the
+            second wave of hackers, this time targeted directly at users.
+            
+            
+            ---
+            
+            # Shameless plug
+            
+            http://dracony.org
+            
+            @dracony_gimp
+            
+        </textarea>
+        <script src="https://gnab.github.io/remark/downloads/remark-latest.min.js">
+        </script>
+        <script>
+            var slideshow = remark.create({
+                ratio: '16:9',
+                highlightLanguage: 'php',
+                highlightStyle: 'solarized_dark',
+            });
+        </script>
+    </body>
+</html>
